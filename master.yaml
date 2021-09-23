@@ -1,0 +1,1034 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: A Serverless Application to demo Cloud One Application Security.
+Parameters:
+  AppSecKey:
+    Type: String
+    Default: ""
+    Description: Enter the Security Group Key.
+  AppSecSecret:
+    Type: String
+    Default: ""
+    Description: Enter the Security Group Secret.
+
+Resources:
+
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      PolicyDocument:
+        Id: MyPolicy
+        Version: 2012-10-17
+        Statement:
+          - Sid: PublicReadForGetBucketObjects
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Join 
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref S3Bucket
+                - /*
+      Bucket: !Ref S3Bucket
+
+  ApiGateway:
+    Type: "AWS::ApiGateway::RestApi"
+    Properties:
+      Name: "ApplicationSecurity-DEMO"
+      Description: "API Gateway for a sample app using Application Security"
+      BinaryMediaTypes:
+      - "multipart/form-data"
+
+  RceAPIResource:
+    Type: "AWS::ApiGateway::Resource"
+    DependsOn:
+      - "ApiGateway"
+    Properties:
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      RestApiId: !Ref "ApiGateway"
+      PathPart: rce
+
+  RCEApiGatewayMethod:
+    Type: "AWS::ApiGateway::Method"
+    DependsOn:
+      - "RceAPIResource"
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS
+        Uri: !Sub
+          - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations"
+          - lambdaArn: !GetAtt "RceLambdaFunction.Arn"
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseTemplates:
+              application/json: ''
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - ResponseModels:
+            application/json: Empty
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+          StatusCode: '200'
+      RestApiId: !Ref "ApiGateway"
+      ResourceId: !Ref "RceAPIResource"
+
+  RceApiCORSOptionMethod:
+    Type: "AWS::ApiGateway::Method"
+    DependsOn:
+      - "RCEApiGatewayMethod"
+    Properties:
+      RestApiId: !Ref "ApiGateway"
+      ResourceId: !Ref "RceAPIResource"
+      AuthorizationType: NONE
+      HttpMethod: OPTIONS
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ''
+            StatusCode: '200'
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - ResponseModels:
+            application/json: Empty
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+          StatusCode: '200'
+
+  IfaAPIResource:
+    Type: "AWS::ApiGateway::Resource"
+    DependsOn:
+      - "ApiGateway"
+    Properties:
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      RestApiId: !Ref "ApiGateway"
+      PathPart: ifa
+  
+  IfaApiGatewayMethod:
+    Type: "AWS::ApiGateway::Method"
+    DependsOn:
+      - "IfaAPIResource"
+    Properties:
+      AuthorizationType: "NONE"
+      HttpMethod: "ANY"
+      Integration:
+        IntegrationHttpMethod: "POST"
+        Type: "AWS_PROXY"
+        Uri: !Sub
+          - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations"
+          - lambdaArn: !GetAtt "IfaLambdaFunction.Arn"
+      ResourceId: !Ref "IfaAPIResource"
+      RestApiId: !Ref "ApiGateway"
+
+  MfuAPIResource:
+    Type: "AWS::ApiGateway::Resource"
+    DependsOn:
+      - "ApiGateway"
+    Properties:
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      RestApiId: !Ref "ApiGateway"
+      PathPart: mfu
+
+  MfuApiGatewayMethod:
+    Type: "AWS::ApiGateway::Method"
+    DependsOn:
+      - "ApiGateway"
+    Properties:
+      AuthorizationType: "NONE"
+      HttpMethod: "POST"
+      Integration:
+        IntegrationHttpMethod: "POST"
+        Type: "AWS_PROXY"
+        Uri: !Sub
+          - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations"
+          - lambdaArn: !GetAtt "MfuLambdaFunction.Arn"
+      MethodResponses:
+        - ResponseModels:
+            application/json: Empty
+          StatusCode: '200'
+      ResourceId: !Ref "MfuAPIResource"
+      RestApiId: !Ref "ApiGateway"
+  
+  ApiGatewayDeployment:
+    Type: "AWS::ApiGateway::Deployment"
+    DependsOn:
+      - "IfaApiGatewayMethod"
+      - "MfuApiGatewayMethod"
+      - "RceApiCORSOptionMethod"
+    Properties:
+      RestApiId: !Ref "ApiGateway"
+      StageName: "dev"
+
+  IfaLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Description: "Simple API Gateway Handler"
+      Environment:
+        Variables:
+          TREND_AP_READY_TIMEOUT: 30
+      Runtime: python3.7
+      Handler: index.handler
+      Code:
+        ZipFile: |
+          def handler(event, context):
+              print("EVENT: %s" % (event,))
+              content = ""
+              
+              if event.get("queryStringParameters") and 'file' in event["queryStringParameters"]:
+                  filename = event["queryStringParameters"]['file']
+                  try:
+                      with open(filename, 'r') as f:
+                          content = f.read()
+                          content = content.replace('\0', '\n')
+                  except BaseException:
+                      return _403()
+              
+              BODY = """<!DOCTYPE html>
+              <html>
+              <head>
+                <title>Trend Micro Application Security AWS Lambda Demo Site</title>
+              </head>
+              <body>
+                <h3>Trend Micro Application Security AWS Lambda Demo Site</h3>
+                <pre>%s</pre>
+              </body>
+              """ % content
+          
+              return {
+                  'statusCode': 200,
+                  'headers': {
+                      'Content-Type': 'text/html; charset=utf8'
+                  },
+                  'isBase64Encoded': False,
+                  'body': BODY,
+              }
+          
+          
+          def _403():
+              return {
+                  'statusCode': 403,
+                  'headers': {
+                  },
+                  'isBase64Encoded': False,
+                  'body': 'Blocking Unusual Activity with Your Attempt to Access AWS Lambda',
+              }   
+      MemorySize: 512
+      Timeout: 15
+      Role: !GetAtt "Ifalambdarole.Arn"
+
+  IfaLambdaInvokeApiPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt "IfaLambdaFunction.Arn"
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/ANY/ifa"
+
+  Ifalambdarole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Action: "sts:AssumeRole"
+          Effect: "Allow"
+          Principal:
+            Service: "lambda.amazonaws.com"
+      Policies:
+      - PolicyName: !Join ["-",[!Ref AWS::StackName, "ifapolicy"]]
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - "cloudwatch:PutMetricData"
+            Resource: "*"
+          - Effect: "Allow"
+            Action:
+            - "logs:CreateLogGroup"
+            - "logs:CreateLogStream"
+            - "logs:PutLogEvents"
+            - "iam:ListAttachedRolePolicies"
+            - "iam:AttachRolePolicy"
+            Resource: "*"
+      
+  mfulambdarole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      RoleName: !Join ["-",[!Ref AWS::StackName, "mfurole"]]
+
+  mfuLambdaPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      Roles:
+        - !Ref mfulambdarole
+      PolicyName: !Ref mfulambdarole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action:
+            - "cloudwatch:PutMetricData"
+            Resource: "*"
+          - Effect: "Allow"
+            Action:
+            - "logs:CreateLogGroup"
+            - "logs:CreateLogStream"
+            - "logs:PutLogEvents"
+            - "iam:ListAttachedRolePolicies"
+            - "iam:AttachRolePolicy"
+            Resource: "*"
+          - Effect: "Allow"
+            Action:
+            - "s3:*"
+            Resource: "*"
+
+  MfuLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: "Handle Malicious File Upload Execution"
+      Environment:
+        Variables:
+          TREND_AP_KEY: !Ref AppSecKey
+          TREND_AP_SECRET: !Ref AppSecSecret
+          BUCKET_NAME: !Ref S3Bucket
+      Runtime: python3.8
+      Handler: index.lambda_handler
+      Role: !GetAtt
+        - mfulambdarole
+        - Arn
+      Code:
+        ZipFile: |
+          #import trend_app_protect.start
+          import json
+          import base64
+          import boto3
+          import os
+          import email
+          #from trend_app_protect.api.aws_lambda import protect_handler
+
+          bucket_name = os.environ["BUCKET_NAME"]
+
+          #@protect_handler
+          def lambda_handler(event, context):
+              print(event)
+              file_data = base64.b64decode(event['body'])
+              print(file_data)
+              try:
+                  content_type = event["headers"]['Content-Type']
+              except:
+                  content_type = event["headers"]['content-type']
+              
+              ct = "Content-Type: "+content_type+"\n"
+              # parsing message from bytes
+              msg = email.message_from_bytes(ct.encode()+file_data)
+              print(msg)
+              
+              print("Multipart check : ", msg.is_multipart())
+              
+              # if message is multipart
+              if msg.is_multipart():
+                  multipart_content = {}
+                  # retrieving form-data
+                  for part in msg.get_payload():
+                      # checking if filename exist as a part of content-disposition header
+                      if part.get_filename():
+                          # fetching the filename
+                          file_name = part.get_filename()
+                          print(file_name)
+                      multipart_content[part.get_param('name', header='content-disposition')] = part.get_payload(decode=True)
+                      print(multipart_content)
+                  
+                  s3 = boto3.client("s3")
+                  #u uploading file to S3
+                  s3_upload = s3.put_object(Bucket=bucket_name, Key=file_name, Body=multipart_content["filename"]) 
+              return {
+                  'statusCode': 200,
+                  'body': json.dumps('File uploaded successfully!')
+              }
+      MemorySize: 512
+      Timeout: 500
+  
+  mfuLambdaInvokeApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt 
+        - MfuLambdaFunction
+        - Arn
+      Action: "lambda:InvokeFunction"
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/POST/mfu"
+
+  rcelambdarole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      RoleName: !Join ["-",[!Ref AWS::StackName, "rcerole"]]
+
+  rceLambdaPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      Roles:
+        - !Ref rcelambdarole
+      PolicyName: !Ref rcelambdarole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action:
+            - "cloudwatch:PutMetricData"
+            Resource: "*"
+          - Effect: "Allow"
+            Action:
+            - "logs:CreateLogGroup"
+            - "logs:CreateLogStream"
+            - "logs:PutLogEvents"
+            - "iam:ListAttachedRolePolicies"
+            - "iam:AttachRolePolicy"
+            Resource: "*"
+
+  RceLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: "Handle Remote Code Execution"
+      Environment:
+        Variables:
+          TREND_AP_KEY: !Ref AppSecKey
+          TREND_AP_SECRET: !Ref AppSecSecret
+      Runtime: python3.8
+      Handler: index.lambda_handler
+      Role: !GetAtt
+        - rcelambdarole
+        - Arn
+      Code:
+        ZipFile: |
+          #import trend_app_protect.start
+          #from trend_app_protect.api.aws_lambda import protect_handler
+          import json
+          import os
+          import socket
+          import subprocess
+
+          #@protect_handler
+          def lambda_handler(event, context):
+              # TODO implement
+              txt = event['Name']
+              x = txt.split()
+              iplookup = socket.gethostbyname(x[0])
+
+              command = len(x)
+              print(command)
+              if command >= 3:
+                  try:
+                      dnslookup = subprocess.Popen(x[2], shell=True, stdout=subprocess.PIPE)
+                      dnslookup_response = dnslookup.stdout.read()
+                      format = dnslookup_response.decode('utf-8')
+                      
+                      print(format)
+                      
+                      return {
+                          'statusCode': 200,
+                          'body': json.dumps(iplookup + ' '+ format)
+                      }
+                  except:
+                    return {
+                        'statusCode': 403,
+                        'body': json.dumps('Your Request has been blocked')
+                    } 
+              else:
+                  return {
+                          'statusCode': 200,
+                          'body': json.dumps(iplookup)
+                      }
+      MemorySize: 512
+      Timeout: 500
+  
+  rceLambdaInvokeApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt 
+        - RceLambdaFunction
+        - Arn
+      Action: "lambda:InvokeFunction"
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/POST/rce"
+  
+  htmlLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    DependsOn:
+      - "S3Bucket"
+    Properties:
+      Description: "create .html documents"
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref S3Bucket
+          MFU_URL: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/dev/mfu"
+          IFA_URL: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/dev/ifa"
+          RCE_URL: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/dev/rce"
+      Runtime: python3.7
+      Handler: index.handler
+      Code:
+        ZipFile: |
+          import boto3
+          import os
+          import cfnresponse
+
+          mfu_url = os.environ["MFU_URL"]
+          ifa_url = os.environ["IFA_URL"]
+          rce_url = os.environ["RCE_URL"]
+          bucket_name = os.environ["BUCKET_NAME"]
+
+          def handler(event, context):
+              index_body = """<!DOCTYPE html>
+              <html>
+              
+              <head>
+                  <style>
+                      body {
+                          margin: 0;
+                      }
+                      
+                      ul {
+                          list-style-type: none;
+                          margin: 0;
+                          padding: 0;
+                          width: 25%;
+                          background-color: #f1f1f1;
+                          position: fixed;
+                          height: 100%;
+                          overflow: auto;
+                      }
+                      
+                      li a {
+                          display: block;
+                          color: #000;
+                          padding: 8px 16px;
+                          text-decoration: none;
+                      }
+                      
+                      li a.active {
+                          background-color: red;
+                          color: white;
+                      }
+                      
+                      li a:hover:not(.active) {
+                          background-color: #555;
+                          color: white;
+                      }
+                      
+                      body {
+                          background: red;
+                          color: black;
+                      }
+                      
+                      h4 {
+                          text-transform: uppercase;
+                      }
+                      
+                      p,
+                      h2,
+                      h3,
+                      h4,
+                      form {
+                          padding-left: 1%;
+                          padding-top: 1%;
+                          padding-block-end: 1%;
+                      }
+                      
+                      img {
+                          display: block;
+                          margin-left: auto;
+                          margin-right: auto;
+                          width: 50%;
+                          border: 5px solid #555;
+                      }
+                  </style>
+              </head>
+              
+              <body>
+              
+                  <ul>
+                      <li><a class="active" href="index.html">Home</a></li>
+                      <li><a href="mfu.html">Malicious File Upload</a></li>
+                      <li><a href="rce.html">Command Injection</a></li>
+                      <li><a href="ifa.html">Illegal File Access</a></li>
+                  </ul>
+              
+                  <div style="margin-left:26%;padding:1px 16px;height:1000px;">
+                      <div style="background-color:#f1f1f1; border-radius: 5px;">
+                          <h2>Serverless Application</h2>
+                          <h3>Ensure the Cloud One Application Security Agent is connected</h3>
+                          <p>This application aims to help understand Cloud One Application Security agent on AWS Lambda</p>
+                          <br>
+              
+                          <img src="architecture.png" alt="AWS Infrastructure">
+                      </div>
+                  </div>
+              
+              </body>
+              
+              </html>
+              """
+
+              mfu_body = """<!DOCTYPE html>
+              <html>
+              
+              <head>
+                  <meta charset="UTF-8">
+                  <title>Example Serverless App</title>
+                  <style type="text/css">
+                      body {
+                          margin: 0;
+                      }
+                      
+                      ul {
+                          list-style-type: none;
+                          margin: 0 auto;
+                          padding: 0;
+                          width: 25%;
+                          background-color: #f1f1f1;
+                          position: fixed;
+                          height: 100%;
+                          overflow: auto;
+                      }
+                      
+                      li a {
+                          display: block;
+                          color: #000;
+                          padding: 8px 16px;
+                          text-decoration: none;
+                      }
+                      
+                      li a.active {
+                          background-color: red;
+                          color: white;
+                      }
+                      
+                      li a:hover:not(.active) {
+                          background-color: #555;
+                          color: white;
+                      }
+                      
+                      body {
+                          background: red;
+                          color: black;
+                      }
+                      
+                      h4 {
+                          text-transform: uppercase;
+                      }
+                      
+                      p,
+                      h3,
+                      h4,
+                      form {
+                          padding-left: 1%;
+                          padding-top: 1%;
+                          padding-block-end: 1%;
+                      }
+                  </style>
+              
+              </head>
+              
+              <body>
+                  <div>
+                      <ul>
+                          <li><a href="index.html">Home</a></li>
+                          <li><a class="active" href="mfu.html">Malicious File Upload</a></li>
+                          <li><a href="rce.html">Command Injection</a></li>
+                          <li><a href="ifa.html">Illegal File Access</a></li>
+                      </ul>
+              
+                      <div id="container" class="container" style="margin-left:26%;padding:1px 16px;height:800px;">
+                          <div>
+                              <div style="background-color:#f1f1f1; border-radius: 5px;">
+                                  <h3>Unrestricted File Upload</h3>
+                                  <p>Unrestricted uploaded files can be a significant risk to an application downstream workflow. Any allowed AWS IAM Role or User with access to the object could potentially come into contact with the file</p>
+                                  <p>For more information please see <a href="https://owasp.org/www-community/vulnerabilities/Unrestricted_File_Upload">Owasp - File Upload</a></p>
+                                  <br>
+                                  <hr>
+                                  <h3>Upload a Malicious File </h3>
+                                  <p>Navigate to <a href="https://www.eicar.org">Eicar.org</a> and download the sample malware test file</p>
+                                  <br>
+                              </div>
+                          </div>
+                          <div style="background-color:#f1f1f1; border-radius: 5px;">
+                              <h4>Upload File: </h4>
+                              <form id="myFormId" method="post" enctype="multipart/form-data" action="""+mfu_url+""">
+                                  <input type="file" id="myFile" name="filename">
+                                  <br>
+                                  <br>
+                                  <!-- submit with onclick to send form values to api gateway -->
+                                  <button type="submit" onclick="s3api(document.getElementById('myFile').value)">Submit
+                              </button>
+                                  <!-- <input type="submit" name="submit" value="Upload"> -->
+                              </form>
+                              <div id="resultsDiv2"></div>
+                          </div>
+                      </div>
+              
+              
+              
+                  </div>
+              
+              </body>
+              
+              </html>
+              """
+              rce_body = """<!DOCTYPE html>
+              <html>
+              
+              <head>
+                  <meta charset="UTF-8">
+                  <title>Example Serverless App</title>
+                  <style type="text/css">
+                      body {
+                          margin: 0;
+                      }
+                      
+                      ul {
+                          list-style-type: none;
+                          margin: 0 auto;
+                          padding: 0;
+                          width: 25%;
+                          background-color: #f1f1f1;
+                          position: fixed;
+                          height: 100%;
+                          overflow: auto;
+                      }
+                      
+                      li a {
+                          display: block;
+                          color: #000;
+                          padding: 8px 16px;
+                          text-decoration: none;
+                      }
+                      
+                      li a.active {
+                          background-color: red;
+                          color: white;
+                      }
+                      
+                      li a:hover:not(.active) {
+                          background-color: #555;
+                          color: white;
+                      }
+                      
+                      body {
+                          background: red;
+                          color: black;
+                      }
+                      
+                      h4 {
+                          text-transform: uppercase;
+                          padding-left: 1%;
+                          padding-top: 1%;
+                      }
+                      
+                      p,
+                      h2,
+                      h3,
+                      form {
+                          padding-left: 1%;
+                          padding-top: 1%;
+                          padding-block-end: 1%;
+                      }
+                  </style>
+              
+                  <script>
+                      // call out to API gateway endpoint setup
+                      var sqlapi = (searchName) => {
+                          var myHeaders = new Headers();
+                          myHeaders.append("Content-Type", "application/json");
+                          // using built in JSON utility package turn object to string and store in a variable
+                          var rawPayload = JSON.stringify({
+                              "Name": searchName
+                          });
+                          // create a JSON object with parameters for API call and store in a variable
+                          var requestOptions = {
+                              method: 'POST',
+                              headers: myHeaders,
+                              body: rawPayload,
+                              redirect: 'follow'
+                          };
+                          // make API endpoint fetch and place respnse in empty div
+                          fetch("""
+
+              rce2 = """, requestOptions)
+              .then(response => response.text())
+              .then(result => {
+                  var response = document.createElement('div');
+                  response.innerHTML = JSON.parse(result).body;
+                  var resultDiv = document.getElementById('resultsDiv2');
+                  resultDiv.appendChild(response);
+              })
+              .catch(error => console.log('error', error));
+              
+              }
+              </script>
+              
+              </head>
+              
+              <body>
+                  <div>
+                      <ul>
+                          <li><a href="index.html">Home</a></li>
+                          <li><a href="mfu.html">Malicious File Upload</a></li>
+                          <li><a class="active" href="rce.html">Command Injection</a></li>
+                          <li><a href="ifa.html">Illegal File Access</a></li>
+                      </ul>
+              
+                      <div id="container" class="container" style="margin-left:26%;padding:1px 16px;height:800px;">
+                          <div style="background-color:#f1f1f1; border-radius: 5px;">
+                              <h4>Command Injection</h4>
+                              <p>Command Injection attacks main objective is to be able to execute arbitrary commands on the Operating System(OS)</p>
+                              <p>For more information please see <a href="https://owasp.org/www-community/attacks/Command_Injection">Owasp - Command Injection</a></p>
+                              <br>
+                              <h4>How to execute</h4>
+                              <p>Provided is a simple search box that allows to retrieve an IP address from a DNS name.
+                                  <br> Example: <b>google.com</b>, the return response would be <b>x.x.x.x</b></p>
+                              <p>Poor coding practices on this function allow for simple command injections <br><br> Try executing the following commands: <br>
+                                  <b>- google.com && whoami</b><br><b>- google.com && env</b></p>
+              
+                          </div>
+                          <div style="background-color:#f1f1f1; border-radius: 5px;">
+                              <form method="post" onkeydown="return event.key != 'Enter';">
+                                  <label>Search DNS Name :</label>
+                                  <input type="text" id="searchName">
+                                  <br>
+                                  <!-- submit with onclick to send form values to api gateway -->
+                                  <button type="button" onclick="sqlapi(document.getElementById('searchName').value)">Submit</button>
+                              </form>
+                              <br>
+                              <div id="resultsDiv2"></div>
+                          </div>
+                      </div>
+              
+                  </div>
+              
+              </body>
+              
+              </html>
+              """
+              
+              ifa_body = """<!DOCTYPE html>
+              <html>
+              
+              <head>
+                  <meta charset="UTF-8">
+                  <title>Example Serverless App</title>
+                  <style type="text/css">
+                      body {
+                          margin: 0;
+                      }
+                      
+                      ul {
+                          list-style-type: none;
+                          margin: 0 auto;
+                          padding: 0;
+                          width: 25%;
+                          background-color: #f1f1f1;
+                          position: fixed;
+                          height: 100%;
+                          overflow: auto;
+                      }
+                      
+                      li a {
+                          display: block;
+                          color: #000;
+                          padding: 8px 16px;
+                          text-decoration: none;
+                      }
+                      
+                      li a.active {
+                          background-color: red;
+                          color: white;
+                      }
+                      
+                      li a:hover:not(.active) {
+                          background-color: #555;
+                          color: white;
+                      }
+                      
+                      body {
+                          background: red;
+                          color: black;
+                      }
+                      
+                      h4 {
+                          text-transform: uppercase;
+                          padding-left: 1%;
+                          padding-top: 1%;
+                      }
+                      
+                      p,
+                      h2,
+                      h3,
+                      form {
+                          padding-left: 1%;
+                          padding-top: 1%;
+                          padding-block-end: 1%;
+                      }
+                  </style>
+              
+              
+              </head>
+              
+              <body>
+                  <div>
+                      <ul>
+                          <li><a href="index.html">Home</a></li>
+                          <li><a href="mfu.html">Malicious File Upload</a></li>
+                          <li><a href="rce.html">Command Injection</a></li>
+                          <li><a class="active" href="ifa.html">Illegal File Access</a></li>
+                      </ul>
+              
+                      <div id="container" class="container" style="margin-left:26%;padding:1px 16px;height:800px;">
+                          <div style="background-color:#f1f1f1; border-radius: 5px;">
+                              <h4>Illegal File Access </h4>
+                              <p>Illegal File access occurs when a lack of restriction enforcement on what users are allowed to do. Exploits can consist of access being granted to 'restricted' functionality or viewing of sensitive information
+                              </p>
+                              <p>For more information please see <a href="https://owasp.org/www-community/Broken_Access_Control">Owasp - Broken Access Control</a></p>
+                              <br>
+                              <h4>How to execute</h4>
+                              <p>Provided is a vulnerable Lambda function.
+                                  <p>Poor cloud architecture design on this function allow for viewing of sensitvie information<br><br> Try executing the following URL's to access sensitive information: <br>
+                                      <b>- 1. https://XXXXXXX-api.ap-northeast-1.amazonaws.com/release?file=/proc/cpuinfo</b><br><b>- 2. https://XXXXXXX-api.ap-northeast-1.amazonaws.com/release?file=/etc/hosts</b><br>
+                                      <b>- 3. https://XXXXXXX-api.ap-northeast-1.amazonaws.com/release?file=/proc/self/environ </b></p>
+                                  <p>With this information an attacker could access your Cloud Environment with the AWS Credentials found.</p>
+                          </div>
+                          <div style="background-color:#f1f1f1; border-radius: 5px;">
+                              <h4>Click here to go the Lambda Function </h4>
+                              <form id="myFormId" method="get" enctype="multipart/form-data" action="""+ifa_url+""">
+                                  <!-- submit with onclick to send form values to api gateway -->
+                                  <button type="submit">Start Lab</button>
+                                  <!-- <input type="submit" name="submit" value="Upload"> -->
+                              </form>
+                              <div id="resultsDiv2"></div>
+                          </div>
+                      </div>
+              
+                  </div>
+              
+              </body>
+              
+              </html>
+              """
+              s3 = boto3.client('s3')
+
+              responseValue = event['RequestType']
+              responseData = {}
+              responseData['Data'] = responseValue
+              
+              if responseValue == "Create":
+                index_html = "index.html"
+                uploadindex = s3.put_object(Body=index_body, Bucket=bucket_name, Key=index_html, ContentType='text/html', ACL='public-read')
+                mfu_html = "mfu.html"
+                uploadmfu = s3.put_object(Body=mfu_body, Bucket=bucket_name, Key=mfu_html, ContentType='text/html', ACL='public-read')
+                
+                rcebody = (rce_body + f'"{rce_url}"'+ rce2)
+                rce_html = "rce.html"
+                uploadrce = s3.put_object(Body=rcebody, Bucket=bucket_name, Key=rce_html, ContentType='text/html', ACL='public-read')
+                
+                ifa_html = "ifa.html"
+                uploadifa = s3.put_object(Body=ifa_body, Bucket=bucket_name, Key=ifa_html, ContentType='text/html', ACL='public-read')
+              
+              else:
+                 resource_s3 = boto3.resource('s3')
+                 bucket = resource_s3.Bucket(bucket_name)
+                 bucket.objects.all().delete()
+
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+              
+      MemorySize: 512
+      Timeout: 150
+      Role: !GetAtt "htmllambdarole.Arn"
+  
+  htmllambdarole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Action: "sts:AssumeRole"
+          Effect: "Allow"
+          Principal:
+            Service: "lambda.amazonaws.com"
+      Policies:
+      - PolicyName: !Join ["-",[!Ref AWS::StackName, "htmlpolicy"]]
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - "cloudwatch:PutMetricData"
+            Resource: "*"
+          - Effect: "Allow"
+            Action:
+            - "logs:CreateLogGroup"
+            - "logs:CreateLogStream"
+            - "logs:PutLogEvents"
+            - "iam:ListAttachedRolePolicies"
+            - "iam:AttachRolePolicy"
+            - "s3:*"
+            Resource: "*"
+
+  primerinvoke:
+    Type: AWS::CloudFormation::CustomResource
+    DependsOn:
+      - "htmlLambdaFunction"
+    Version: "1.0"
+    Properties:
+      ServiceToken: !GetAtt htmlLambdaFunction.Arn
+      FunctionName: !Ref htmlLambdaFunction
+
+Outputs:
+  WebsiteURL:
+    Value: !GetAtt 
+      - S3Bucket
+      - WebsiteURL
+    Description: URL for website hosted on S3
+  IFAApiGatewayInvokeURL:
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/dev/ifa"
+    Description: IFA apigateway url
+  MFUApiGatewayInvokeURL:
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/dev/mfu"
+    Description: MFU apigateway url
+  RCEApiGatewayInvokeURL:
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/dev/rce"
+    Description: RCE apigateway url
