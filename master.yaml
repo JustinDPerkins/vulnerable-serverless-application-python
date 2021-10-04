@@ -514,262 +514,114 @@ Resources:
           bucket_name = os.environ["BUCKET_NAME"]
 
           def handler(event, context):
-              index_body = """<!DOCTYPE html>
-              <html>
-              
-              <head>
-                  <style>
-                      body {
-                          margin: 0;
-                      }
-                      
-                      ul {
-                          list-style-type: none;
-                          margin: 0;
-                          padding: 0;
-                          width: 25%;
-                          background-color: #f1f1f1;
-                          position: fixed;
-                          height: 100%;
-                          overflow: auto;
-                      }
-                      
-                      li a {
-                          display: block;
-                          color: #000;
-                          padding: 8px 16px;
-                          text-decoration: none;
-                      }
-                      
-                      li a.active {
-                          background-color: red;
-                          color: white;
-                      }
-                      
-                      li a:hover:not(.active) {
-                          background-color: #555;
-                          color: white;
-                      }
-                      
-                      body {
-                          background: red;
-                          color: black;
-                      }
-                      
-                      h4 {
-                          text-transform: uppercase;
-                      }
-                      
-                      p,
-                      h2,
-                      h3,
-                      h4,
-                      form {
-                          padding-left: 1%;
-                          padding-top: 1%;
-                          padding-block-end: 1%;
-                      }
-                      
-                      img {
-                          display: block;
-                          margin-left: auto;
-                          margin-right: auto;
-                          width: 50%;
-                          border: 5px solid #555;
-                      }
-                  </style>
-              </head>
-              
-              <body>
-              
-                  <ul>
-                      <li><a class="active" href="index.html">Home</a></li>
-                      <li><a href="mfu.html">Malicious File Upload</a></li>
-                      <li><a href="rce.html">Command Injection</a></li>
-                      <li><a href="ifa.html">Illegal File Access</a></li>
-                  </ul>
-              
-                  <div style="margin-left:26%;padding:1px 16px;height:1000px;">
-                      <div style="background-color:#f1f1f1; border-radius: 5px;">
-                          <h2>Serverless Application</h2>
-                          <h3>Ensure the Cloud One Application Security Agent is connected</h3>
-                          <p>This application aims to help understand Cloud One Application Security agent on AWS Lambda</p>
-                          <br>
-              
-                          <img src="architecture.png" alt="AWS Infrastructure">
-                      </div>
-                  </div>
-              
-              </body>
-              
-              </html>
-              """
 
               mfu_body = """<!DOCTYPE html>
-              <html>
-              
-              <head>
-                  <meta charset="UTF-8">
-                  <title>Example Serverless App</title>
-                  <style type="text/css">
-                      body {
-                          margin: 0;
-                      }
-                      
-                      ul {
-                          list-style-type: none;
-                          margin: 0 auto;
-                          padding: 0;
-                          width: 25%;
-                          background-color: #f1f1f1;
-                          position: fixed;
-                          height: 100%;
-                          overflow: auto;
-                      }
-                      
-                      li a {
-                          display: block;
-                          color: #000;
-                          padding: 8px 16px;
-                          text-decoration: none;
-                      }
-                      
-                      li a.active {
-                          background-color: red;
-                          color: white;
-                      }
-                      
-                      li a:hover:not(.active) {
-                          background-color: #555;
-                          color: white;
-                      }
-                      
-                      body {
-                          background: red;
-                          color: black;
-                      }
-                      
-                      h4 {
-                          text-transform: uppercase;
-                      }
-                      
-                      p,
-                      h3,
-                      h4,
-                      form {
-                          padding-left: 1%;
-                          padding-top: 1%;
-                          padding-block-end: 1%;
-                      }
-                  </style>
-              
-              </head>
-              
-              <body>
-                  <div>
-                      <ul>
-                          <li><a href="index.html">Home</a></li>
-                          <li><a class="active" href="mfu.html">Malicious File Upload</a></li>
-                          <li><a href="rce.html">Command Injection</a></li>
-                          <li><a href="ifa.html">Illegal File Access</a></li>
-                      </ul>
-              
-                      <div id="container" class="container" style="margin-left:26%;padding:1px 16px;height:800px;">
-                          <div>
-                              <div style="background-color:#f1f1f1; border-radius: 5px;">
-                                  <h3>Unrestricted File Upload</h3>
-                                  <p>Unrestricted uploaded files can be a significant risk to an application downstream workflow. Any allowed AWS IAM Role or User with access to the object could potentially come into contact with the file</p>
-                                  <p>For more information please see <a href="https://owasp.org/www-community/vulnerabilities/Unrestricted_File_Upload">Owasp - File Upload</a></p>
-                                  <br>
-                                  <hr>
-                                  <h3>Upload a Malicious File </h3>
-                                  <p>Navigate to <a href="https://www.eicar.org">Eicar.org</a> and download the sample malware test file</p>
-                                  <br>
+              <html lang="en">
+                  <head>
+                      <meta charset="utf-8" />
+                      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+                      <meta name="description" content="" />
+                      <meta name="author" content="" />
+                      <title>Serverless Application - Malicious File Upload</title>
+                      <!-- Favicon-->
+                      <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+                      <!-- Bootstrap icons-->
+                      <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet" />
+                      <!-- Core theme CSS (includes Bootstrap)-->
+                      <link href="css/styles.css" rel="stylesheet" />
+                  </head>
+                  <body>
+                      <!-- Responsive navbar-->
+                      <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+                          <div class="container px-5">
+                              <a class="navbar-brand" href="index.html">Web App</a>
+                              <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+                              <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                                  <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                                      <li class="nav-item"><a class="nav-link" aria-current="page" href="index.html"><i class="bi bi-house"></i> Home</a></li>
+                                      <li class="nav-item"><a class="nav-link active" aria-current="page" href="mfu.html"><i class="bi bi-file-earmark-arrow-up"></i> Malicious File Upload</a></li>
+                                      <li class="nav-item"><a class="nav-link" aria-current="page" href="cmi.html"><i class="bi bi-terminal"></i> Command Injection</a></li>
+                                      <li class="nav-item"><a class="nav-link" aria-current="page" href="ifa.html"><i class="bi bi-folder-x"></i> Illegal File Access</a></li>
+                                  </ul>
                               </div>
                           </div>
-                          <div style="background-color:#f1f1f1; border-radius: 5px;">
-                              <h4>Upload File: </h4>
-                              <form id="myFormId" method="post" enctype="multipart/form-data" action="""+mfu_url+""">
-                                  <input type="file" id="myFile" name="filename">
-                                  <br>
-                                  <br>
-                                  <!-- submit with onclick to send form values to api gateway -->
-                                  <button type="submit" onclick="s3api(document.getElementById('myFile').value)">Submit
-                              </button>
-                                  <!-- <input type="submit" name="submit" value="Upload"> -->
-                              </form>
-                              <div id="resultsDiv2"></div>
+                      </nav>
+                      <!-- Header-->
+                      <header>
+                          <div class="container px-5">
+                              <div class="row gx-5 justify-content-center">
+                                  <div class="col-lg-10">
+                                      <div class="text-center my-5">
+                                          <div class="feature bg-danger bg-gradient text-white rounded-3 mb-3"><i class="bi bi-file-earmark-arrow-up"></i></div>
+                                          <h2>Malicious File Upload</h2>
+                                          <p>Unrestricted uploaded files can be a significant risk to an application downstream workflow. Any allowed AWS IAM Role or User with access to the object could potentially come into contact with the file</p>
+                                          <p>For more information please see <a href="https://owasp.org/www-community/vulnerabilities/Unrestricted_File_Upload" target="_blank" style="color: cornflowerblue;">Owasp - File Upload</a></p>
+                                      </div>
+                                  </div>
+                              </div>
                           </div>
-                      </div>
-              
-              
-              
-                  </div>
-              
-              </body>
-              
+                      </header>
+                      <!-- MFU section-->
+                      <section class="py-5" id="mfu">
+                          <div class="container px-5 my-5">
+                              <div class="row gx-5">
+                                  <div class="col-lg-6">
+                                      <div class="card">
+                                          <div class="card-body">
+                                              <h4>1. Get a Malicious File </h4>
+                                              <p>Navigate to <a href="https://www.eicar.org" target="_blank" style="color: cornflowerblue;">Eicar.org</a> and download the sample malware test file</p>
+                                          </div>
+                                      </div>
+                                  </div>
+                                  <div class="col-lg-6">
+                                      <div class="card">
+                                          <div class="card-body">
+                                              <h4>2. Upload the Malicious File </h4>
+
+                                              <form id="myFormId" method="post" enctype="multipart/form-data" action="""+mfu_url+""">
+                                                  <div class="input-group">
+                                                      <input type="file" class="form-control" id="myFile" name="filename" aria-describedby="inputGroupFile" aria-label="Upload">
+                                                      <button class="btn btn-outline-danger" type="submit" id="btn_inputGroupFile" onclick="s3api(document.getElementById('myFile').value)">Submit</button>
+                                                  </div>
+                                              </form>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                              <div class="row gx-5">
+                                  <div id="resultsDiv2"></div>
+                              </div>
+                          </div>
+                      </section>
+                      
+                      <!-- Footer-->
+                      <!-- <footer class="footer py-3 bg-dark fixed-bottom" style="margin-bottom: 0%;">
+                          <div class="container px-5">
+                              <p class="m-0 text-center text-white">Serverless Application 2021</p>
+                          </div>
+                      </footer> -->
+                      <!-- Bootstrap core JS-->
+                      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js"></script>
+                      
+                  </body>
               </html>
               """
               rce_body = """<!DOCTYPE html>
-              <html>
-              
-              <head>
-                  <meta charset="UTF-8">
-                  <title>Example Serverless App</title>
-                  <style type="text/css">
-                      body {
-                          margin: 0;
-                      }
-                      
-                      ul {
-                          list-style-type: none;
-                          margin: 0 auto;
-                          padding: 0;
-                          width: 25%;
-                          background-color: #f1f1f1;
-                          position: fixed;
-                          height: 100%;
-                          overflow: auto;
-                      }
-                      
-                      li a {
-                          display: block;
-                          color: #000;
-                          padding: 8px 16px;
-                          text-decoration: none;
-                      }
-                      
-                      li a.active {
-                          background-color: red;
-                          color: white;
-                      }
-                      
-                      li a:hover:not(.active) {
-                          background-color: #555;
-                          color: white;
-                      }
-                      
-                      body {
-                          background: red;
-                          color: black;
-                      }
-                      
-                      h4 {
-                          text-transform: uppercase;
-                          padding-left: 1%;
-                          padding-top: 1%;
-                      }
-                      
-                      p,
-                      h2,
-                      h3,
-                      form {
-                          padding-left: 1%;
-                          padding-top: 1%;
-                          padding-block-end: 1%;
-                      }
-                  </style>
-              
+              <html lang="en">
+                  <head>
+                      <meta charset="utf-8" />
+                      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+                      <meta name="description" content="" />
+                      <meta name="author" content="" />
+                      <title>Serverless Application - Command Injection</title>
+                      <!-- Favicon-->
+                      <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+                      <!-- Bootstrap icons-->
+                      <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet" />
+                      <!-- Core theme CSS (includes Bootstrap)-->
+                      <link href="css/styles.css" rel="stylesheet" />
+                  </head>
+                  <body>
                   <script>
                       // call out to API gateway endpoint setup
                       var sqlapi = (searchName) => {
@@ -790,163 +642,212 @@ Resources:
                           fetch("""
 
               rce2 = """, requestOptions)
-              .then(response => response.text())
-              .then(result => {
-                  var response = document.createElement('div');
-                  response.innerHTML = JSON.parse(result).body;
-                  var resultDiv = document.getElementById('resultsDiv2');
-                  resultDiv.appendChild(response);
-              })
-              .catch(error => console.log('error', error));
-              
-              }
-              </script>
-              
-              </head>
-              
-              <body>
-                  <div>
-                      <ul>
-                          <li><a href="index.html">Home</a></li>
-                          <li><a href="mfu.html">Malicious File Upload</a></li>
-                          <li><a class="active" href="rce.html">Command Injection</a></li>
-                          <li><a href="ifa.html">Illegal File Access</a></li>
-                      </ul>
-              
-                      <div id="container" class="container" style="margin-left:26%;padding:1px 16px;height:800px;">
-                          <div style="background-color:#f1f1f1; border-radius: 5px;">
-                              <h4>Command Injection</h4>
-                              <p>Command Injection attacks main objective is to be able to execute arbitrary commands on the Operating System(OS)</p>
-                              <p>For more information please see <a href="https://owasp.org/www-community/attacks/Command_Injection">Owasp - Command Injection</a></p>
-                              <br>
-                              <h4>How to execute</h4>
-                              <p>Provided is a simple search box that allows to retrieve an IP address from a DNS name.
-                                  <br> Example: <b>google.com</b>, the return response would be <b>x.x.x.x</b></p>
-                              <p>Poor coding practices on this function allow for simple command injections <br><br> Try executing the following commands: <br>
-                                  <b>- google.com && whoami</b><br><b>- google.com && env</b></p>
-              
+                          .then(response => response.text())
+                          .then(result => {
+                              var response = document.createElement('div');
+                              response.innerHTML = JSON.parse(result).body;
+                              var resultDiv = document.getElementById('resultsDiv2');
+                              resultDiv.appendChild(response);
+                          })
+                          .catch(error => console.log('error', error));
+                          
+                          }
+                    </script>
+                      <!-- Responsive navbar-->
+                      <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+                          <div class="container px-5">
+                              <a class="navbar-brand" href="index.html">Web App</a>
+                              <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+                              <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                                  <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                                      <li class="nav-item"><a class="nav-link" aria-current="page" href="index.html"><i class="bi bi-house"></i> Home</a></li>
+                                      <li class="nav-item"><a class="nav-link" aria-current="page" href="mfu.html"><i class="bi bi-file-earmark-arrow-up"></i> Malicious File Upload</a></li>
+                                      <li class="nav-item"><a class="nav-link active" aria-current="page" href="cmi.html"><i class="bi bi-terminal"></i> Command Injection</a></li>
+                                      <li class="nav-item"><a class="nav-link" aria-current="page" href="ifa.html"><i class="bi bi-folder-x"></i> Illegal File Access</a></li>
+                                  </ul>
+                              </div>
                           </div>
-                          <div style="background-color:#f1f1f1; border-radius: 5px;">
-                              <form method="post" onkeydown="return event.key != 'Enter';">
-                                  <label>Search DNS Name :</label>
-                                  <input type="text" id="searchName">
-                                  <br>
-                                  <!-- submit with onclick to send form values to api gateway -->
-                                  <button type="button" onclick="sqlapi(document.getElementById('searchName').value)">Submit</button>
-                              </form>
-                              <br>
-                              <div id="resultsDiv2"></div>
+                      </nav>
+                      <!-- Header-->
+                      <header>
+                          <div class="container px-5">
+                              <div class="row gx-5 justify-content-center">
+                                  <div class="col-lg-10">
+                                      <div class="text-center my-5">
+                                          <div class="feature bg-danger bg-gradient text-white rounded-3 mb-3"><i class="bi bi-terminal"></i></div>
+                                          <h2>Command Injection</h2>
+                                          <p>Command Injection attacks main objective is to be able to execute arbitrary commands on the Operating System(OS)</p>
+                                          <p>For more information please see <a href="https://owasp.org/www-community/attacks/Command_Injection" target="_blank" style="color: cornflowerblue;">Owasp - Command Injection</a></p>
+                                      </div>
+                                  </div>
+                              </div>
                           </div>
-                      </div>
-              
-                  </div>
-              
-              </body>
-              
+                      </header>
+                      <!-- MFU section-->
+                      <section class="py-5" id="mfu">
+                          <div class="container px-5 my-5">
+                              <div class="row gx-5">
+                                  <div class="col-lg-12">
+                                      <div class="card">
+                                          <div class="card-body">
+                                              <h4>How to execute</h4>
+                                              <p>Provided is a simple search box that allows to retrieve an IP address from a DNS name.
+                                              <br> Example: <b>google.com</b>, the return response would be <b>x.x.x.x</b></p>
+                                              <p>Poor coding practices on this function allow for simple command injections</p>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                              <br>
+                              <div class="row gx-5">
+                                  <div class="col-lg-6">
+                                      <div class="card">
+                                          <div class="card-body">
+                                              <h4>1. Copy the commands </h4>
+                                              <p>google.com && whoami<br>google.com && env</p>
+                                          </div>
+                                      </div>
+                                  </div>
+                                  <div class="col-lg-6">
+                                      <div class="card">
+                                          <div class="card-body">
+                                              <h4>2. Paste in the box </h4>
+                                              <form method="post" onkeydown="return event.key != 'Enter';">
+                                                  <label>Search DNS Name :</label>
+                                                  <div class="input-group">
+                                                      <input type="text" class="form-control" id="searchName" aria-label="Text input with segmented dropdown button">
+                                                      <button type="button" class="btn btn-outline-danger" onclick="sqlapi(document.getElementById('searchName').value)">Submit</button>
+                                                  </div>
+                                              </form>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                              <div class="row gx-5">
+                                  <div id="resultsDiv2"></div>
+                              </div>
+                          </div>
+                      </section>
+                
+                      <!-- Footer-->
+                      <!-- <footer class="footer py-3 bg-dark fixed-bottom" style="margin-bottom: 0%;">
+                          <div class="container px-5">
+                              <p class="m-0 text-center text-white">Serverless Application 2021</p>
+                          </div>
+                      </footer> -->
+                      <!-- Bootstrap core JS-->
+                      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js"></script>
+                      
+                  </body>
               </html>
               """
               
               ifa_body = """<!DOCTYPE html>
-              <html>
-              
-              <head>
-                  <meta charset="UTF-8">
-                  <title>Example Serverless App</title>
-                  <style type="text/css">
-                      body {
-                          margin: 0;
-                      }
-                      
-                      ul {
-                          list-style-type: none;
-                          margin: 0 auto;
-                          padding: 0;
-                          width: 25%;
-                          background-color: #f1f1f1;
-                          position: fixed;
-                          height: 100%;
-                          overflow: auto;
-                      }
-                      
-                      li a {
-                          display: block;
-                          color: #000;
-                          padding: 8px 16px;
-                          text-decoration: none;
-                      }
-                      
-                      li a.active {
-                          background-color: red;
-                          color: white;
-                      }
-                      
-                      li a:hover:not(.active) {
-                          background-color: #555;
-                          color: white;
-                      }
-                      
-                      body {
-                          background: red;
-                          color: black;
-                      }
-                      
-                      h4 {
-                          text-transform: uppercase;
-                          padding-left: 1%;
-                          padding-top: 1%;
-                      }
-                      
-                      p,
-                      h2,
-                      h3,
-                      form {
-                          padding-left: 1%;
-                          padding-top: 1%;
-                          padding-block-end: 1%;
-                      }
-                  </style>
-              
-              
-              </head>
-              
-              <body>
-                  <div>
-                      <ul>
-                          <li><a href="index.html">Home</a></li>
-                          <li><a href="mfu.html">Malicious File Upload</a></li>
-                          <li><a href="rce.html">Command Injection</a></li>
-                          <li><a class="active" href="ifa.html">Illegal File Access</a></li>
-                      </ul>
-              
-                      <div id="container" class="container" style="margin-left:26%;padding:1px 16px;height:800px;">
-                          <div style="background-color:#f1f1f1; border-radius: 5px;">
-                              <h4>Illegal File Access </h4>
-                              <p>Illegal File access occurs when a lack of restriction enforcement on what users are allowed to do. Exploits can consist of access being granted to 'restricted' functionality or viewing of sensitive information
-                              </p>
-                              <p>For more information please see <a href="https://owasp.org/www-community/Broken_Access_Control">Owasp - Broken Access Control</a></p>
+              <html lang="en">
+                  <head>
+                      <meta charset="utf-8" />
+                      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+                      <meta name="description" content="" />
+                      <meta name="author" content="" />
+                      <title>Serverless Application - Illegal File Access</title>
+                      <!-- Favicon-->
+                      <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+                      <!-- Bootstrap icons-->
+                      <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet" />
+                      <!-- Core theme CSS (includes Bootstrap)-->
+                      <link href="css/styles.css" rel="stylesheet" />
+                  </head>
+                  <body>
+                      <!-- Responsive navbar-->
+                      <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+                          <div class="container px-5">
+                              <a class="navbar-brand" href="index.html">Web App</a>
+                              <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+                              <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                                  <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                                      <li class="nav-item"><a class="nav-link" aria-current="page" href="index.html"><i class="bi bi-house"></i> Home</a></li>
+                                      <li class="nav-item"><a class="nav-link" aria-current="page" href="mfu.html"><i class="bi bi-file-earmark-arrow-up"></i> Malicious File Upload</a></li>
+                                      <li class="nav-item"><a class="nav-link" aria-current="page" href="cmi.html"><i class="bi bi-terminal"></i> Command Injection</a></li>
+                                      <li class="nav-item"><a class="nav-link active" aria-current="page" href="ifa.html"><i class="bi bi-folder-x"></i> Illegal File Access</a></li>
+                                  </ul>
+                              </div>
+                          </div>
+                      </nav>
+                      <!-- Header-->
+                      <header>
+                          <div class="container px-5">
+                              <div class="row gx-5 justify-content-center">
+                                  <div class="col-lg-10">
+                                      <div class="text-center my-5">
+                                          <div class="feature bg-danger bg-gradient text-white rounded-3 mb-3"><i class="bi bi-folder-x"></i></div>
+                                          <h2>Illegal File Access</h2>
+                                          <p>Illegal File access occurs when a lack of restriction enforcement on what users are allowed to do. Exploits can consist of access being granted to 'restricted' functionality or viewing of sensitive information</p>
+                                          <p>For more information please see <a href="https://owasp.org/www-community/Broken_Access_Control" target="_blank" style="color:cornflowerblue;">Owasp - Broken Access Control</a></p>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      </header>
+                      <!-- MFU section-->
+                      <section class="py-5" id="mfu">
+                          <div class="container px-5 my-5">
+                              <div class="row gx-5">
+                                  <div class="col-lg-12">
+                                      <div class="card">
+                                          <div class="card-body">
+                                              <h4>How to execute</h4>
+                                              <p>Provided is a vulnerable Lambda function.
+                                              <p>Poor cloud architecture design on this function allow for viewing of sensitvie information</p>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
                               <br>
-                              <h4>How to execute</h4>
-                              <p>Provided is a vulnerable Lambda function.
-                                  <p>Poor cloud architecture design on this function allow for viewing of sensitvie information<br><br> Try executing the following URL's to access sensitive information: <br>
-                                      <b>- 1. https://XXXXXXX-api.ap-northeast-1.amazonaws.com/release?file=/proc/cpuinfo</b><br><b>- 2. https://XXXXXXX-api.ap-northeast-1.amazonaws.com/release?file=/etc/hosts</b><br>
-                                      <b>- 3. https://XXXXXXX-api.ap-northeast-1.amazonaws.com/release?file=/proc/self/environ </b></p>
-                                  <p>With this information an attacker could access your Cloud Environment with the AWS Credentials found.</p>
+                              <div class="row gx-5">
+                                  <div class="col-lg-12">
+                                      <div class="card">
+                                          <div class="card-body">
+                                              <h4>1. Try executing the following URL's to access sensitive information </h4>
+                                              <p>https://XXXXXXX-api.ap-northeast-1.amazonaws.com/release?file=/proc/cpuinfo</p>
+                                              <p>https://XXXXXXX-api.ap-northeast-1.amazonaws.com/release?file=/etc/hosts</p>
+                                              <p>https://XXXXXXX-api.ap-northeast-1.amazonaws.com/release?file=/proc/self/environ</p>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                              <br>
+                              <div class="row gx-5">
+                                  <div class="col-lg-12">
+                                      <div class="card">
+                                          <div class="card-body">
+                                              <h4>2. Go to the Lambda Function </h4>
+                                              <form id="myFormId" method="get" enctype="multipart/form-data" action="""+ifa_url+""">
+                                                  <!-- submit with onclick to send form values to api gateway -->
+                                                  <div class="d-grid gap-2">
+                                                      <button type="submit" class="btn btn-outline-danger">Start Lab</button>
+                                                  </div>
+                                                  <!-- <input type="submit" name="submit" value="Upload"> -->
+                                              </form>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                              <div class="row gx-5">
+                                  <div id="resultsDiv2"></div>
+                              </div>
                           </div>
-                          <div style="background-color:#f1f1f1; border-radius: 5px;">
-                              <h4>Click here to go the Lambda Function </h4>
-                              <form id="myFormId" method="get" enctype="multipart/form-data" action="""+ifa_url+""">
-                                  <!-- submit with onclick to send form values to api gateway -->
-                                  <button type="submit">Start Lab</button>
-                                  <!-- <input type="submit" name="submit" value="Upload"> -->
-                              </form>
-                              <div id="resultsDiv2"></div>
+                      </section>
+                      
+                      <!-- Footer-->
+                      <!-- <footer class="footer py-3 bg-dark fixed-bottom" style="margin-bottom:0%;">
+                          <div class="container px-5">
+                              <p class="m-0 text-center text-white">Serverless Application 2021</p>
                           </div>
-                      </div>
-              
-                  </div>
-              
-              </body>
-              
+                      </footer> -->
+                      <!-- Bootstrap core JS-->
+                      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js"></script>
+                      
+                  </body>
               </html>
               """
               s3 = boto3.client('s3')
@@ -956,17 +857,43 @@ Resources:
               responseData['Data'] = responseValue
               
               if responseValue == "Create":
-                index_html = "index.html"
-                uploadindex = s3.put_object(Body=index_body, Bucket=bucket_name, Key=index_html, ContentType='text/html', ACL='public-read')
                 mfu_html = "mfu.html"
                 uploadmfu = s3.put_object(Body=mfu_body, Bucket=bucket_name, Key=mfu_html, ContentType='text/html', ACL='public-read')
                 
                 rcebody = (rce_body + f'"{rce_url}"'+ rce2)
-                rce_html = "rce.html"
+                rce_html = "cmi.html"
                 uploadrce = s3.put_object(Body=rcebody, Bucket=bucket_name, Key=rce_html, ContentType='text/html', ACL='public-read')
                 
                 ifa_html = "ifa.html"
                 uploadifa = s3.put_object(Body=ifa_body, Bucket=bucket_name, Key=ifa_html, ContentType='text/html', ACL='public-read')
+
+                # Upload front end pages to s3 bucket
+                s3_res = boto3.resource('s3')
+                
+                copy_css = {
+                    'Bucket': 'public-vuln-serverless-site',
+                    'Key': 'css/styles.css'
+                }
+                s3_res.meta.client.copy(copy_css, bucket_name, 'css/styles.css', ExtraArgs={'ACL': 'public-read'})
+                
+                copy_archi = {
+                    'Bucket': 'public-vuln-serverless-site',
+                    'Key': 'assets/architecture.png'
+                }
+                s3_res.meta.client.copy(copy_archi, bucket_name, 'assets/architecture.png', ExtraArgs={'ACL': 'public-read'})
+                
+                copy_favi = {
+                    'Bucket': 'public-vuln-serverless-site',
+                    'Key': 'assets/favicon.ico'
+                }
+                s3_res.meta.client.copy(copy_favi, bucket_name, 'assets/favicon.ico', ExtraArgs={'ACL': 'public-read'})
+                
+                
+                copy_index = {
+                    'Bucket': 'public-vuln-serverless-site',
+                    'Key': 'index.html'
+                }
+                s3_res.meta.client.copy(copy_index, bucket_name, 'index.html', ExtraArgs={'ACL': 'public-read'})
               
               else:
                  resource_s3 = boto3.resource('s3')
@@ -976,7 +903,7 @@ Resources:
               cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
               
       MemorySize: 512
-      Timeout: 150
+      Timeout: 200
       Role: !GetAtt "htmllambdarole.Arn"
   
   htmllambdarole:
