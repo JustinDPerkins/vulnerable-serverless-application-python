@@ -184,8 +184,12 @@ Resources:
       Environment:
         Variables:
           TREND_AP_READY_TIMEOUT: 30
-      Runtime: python3.7
+          TREND_AP_KEY: !Ref AppSecKey
+          TREND_AP_SECRET: !Ref AppSecSecret
+          AWS_LAMBDA_EXEC_WRAPPER: "/opt/trend_app_protect"
+      Runtime: python3.8
       Handler: index.handler
+      Layers: [!Sub "arn:aws:lambda:${AWS::Region}:800880067056:layer:CloudOne-ApplicationSecurity-python:1"]
       Code:
         ZipFile: |
           def handler(event, context):
@@ -226,6 +230,7 @@ Resources:
               return {
                   'statusCode': 403,
                   'headers': {
+                      'Content-Type': 'text/html; charset=utf8'
                   },
                   'isBase64Encoded': False,
                   'body': 'Blocking Unusual Activity with Your Attempt to Access AWS Lambda',
@@ -319,24 +324,23 @@ Resources:
           TREND_AP_KEY: !Ref AppSecKey
           TREND_AP_SECRET: !Ref AppSecSecret
           BUCKET_NAME: !Ref S3Bucket
+          AWS_LAMBDA_EXEC_WRAPPER: "/opt/trend_app_protect"
       Runtime: python3.8
       Handler: index.lambda_handler
+      Layers: [!Sub "arn:aws:lambda:${AWS::Region}:800880067056:layer:CloudOne-ApplicationSecurity-python:1"]
       Role: !GetAtt
         - mfulambdarole
         - Arn
       Code:
         ZipFile: |
-          #import trend_app_protect.start
           import json
           import base64
           import boto3
           import os
           import email
-          #from trend_app_protect.api.aws_lambda import protect_handler
-
+          
           bucket_name = os.environ["BUCKET_NAME"]
 
-          #@protect_handler
           def lambda_handler(event, context):
               print(event)
               file_data = base64.b64decode(event['body'])
@@ -430,21 +434,20 @@ Resources:
         Variables:
           TREND_AP_KEY: !Ref AppSecKey
           TREND_AP_SECRET: !Ref AppSecSecret
+          AWS_LAMBDA_EXEC_WRAPPER: "/opt/trend_app_protect"
       Runtime: python3.8
       Handler: index.lambda_handler
+      Layers: [!Sub "arn:aws:lambda:${AWS::Region}:800880067056:layer:CloudOne-ApplicationSecurity-python:1"]
       Role: !GetAtt
         - rcelambdarole
         - Arn
       Code:
         ZipFile: |
-          #import trend_app_protect.start
-          #from trend_app_protect.api.aws_lambda import protect_handler
           import json
           import os
           import socket
           import subprocess
 
-          #@protect_handler
           def lambda_handler(event, context):
               # TODO implement
               txt = event['Name']
@@ -808,9 +811,9 @@ Resources:
                                       <div class="card">
                                           <div class="card-body">
                                               <h4>1. Try executing the following URL's to access sensitive information </h4>
-                                              <p>https://XXXXXXX-api.ap-northeast-1.amazonaws.com/release?file=/proc/cpuinfo</p>
-                                              <p>https://XXXXXXX-api.ap-northeast-1.amazonaws.com/release?file=/etc/hosts</p>
-                                              <p>https://XXXXXXX-api.ap-northeast-1.amazonaws.com/release?file=/proc/self/environ</p>
+                                              <p>https://XXXXXXX-api.ap-northeast-1.amazonaws.com/dev/ifa?file=/proc/cpuinfo</p>
+                                              <p>https://XXXXXXX-api.ap-northeast-1.amazonaws.com/dev/ifa?file=/etc/hosts</p>
+                                              <p>https://XXXXXXX-api.ap-northeast-1.amazonaws.com/dev/ifa?file=/proc/self/environ</p>
                                           </div>
                                       </div>
                                   </div>
