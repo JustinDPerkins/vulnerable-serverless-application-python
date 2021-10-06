@@ -1,6 +1,10 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: A Serverless Application to demo Cloud One Application Security.
 Parameters:
+  C1RegionEndpoint:
+    Type: String
+    Default: ""
+    Description: Enter the Cloud One Account Region Endpoint.
   AppSecKey:
     Type: String
     Default: ""
@@ -186,6 +190,7 @@ Resources:
           TREND_AP_READY_TIMEOUT: 30
           TREND_AP_KEY: !Ref AppSecKey
           TREND_AP_SECRET: !Ref AppSecSecret
+          TREND_AP_HELLO_URL: !Ref C1RegionEndpoint
           AWS_LAMBDA_EXEC_WRAPPER: "/opt/trend_app_protect"
       Runtime: python3.8
       Handler: index.handler
@@ -323,6 +328,7 @@ Resources:
         Variables:
           TREND_AP_KEY: !Ref AppSecKey
           TREND_AP_SECRET: !Ref AppSecSecret
+          TREND_AP_HELLO_URL: !Ref C1RegionEndpoint
           BUCKET_NAME: !Ref S3Bucket
           AWS_LAMBDA_EXEC_WRAPPER: "/opt/trend_app_protect"
       Runtime: python3.8
@@ -434,6 +440,7 @@ Resources:
         Variables:
           TREND_AP_KEY: !Ref AppSecKey
           TREND_AP_SECRET: !Ref AppSecSecret
+          TREND_AP_HELLO_URL: !Ref C1RegionEndpoint
           AWS_LAMBDA_EXEC_WRAPPER: "/opt/trend_app_protect"
       Runtime: python3.8
       Handler: index.lambda_handler
