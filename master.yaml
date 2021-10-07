@@ -375,14 +375,19 @@ Resources:
                           print(file_name)
                       multipart_content[part.get_param('name', header='content-disposition')] = part.get_payload(decode=True)
                       print(multipart_content)
-                  
-                  s3 = boto3.client("s3")
-                  #u uploading file to S3
-                  s3_upload = s3.put_object(Bucket=bucket_name, Key=file_name, Body=multipart_content["filename"]) 
-              return {
-                  'statusCode': 200,
-                  'body': json.dumps('File uploaded successfully!')
-              }
+                  try:
+                    s3 = boto3.client("s3")
+                    #u uploading file to S3
+                    s3_upload = s3.put_object(Bucket=bucket_name, Key=file_name, Body=multipart_content["filename"]) 
+                    return {
+                        'statusCode': 200,
+                        'body': json.dumps('File uploaded successfully!')
+                    }
+                  except:
+                    return {
+                        'statusCode': 200,
+                        'body': json.dumps('No File has been attached!')
+                    }
       MemorySize: 512
       Timeout: 500
   
