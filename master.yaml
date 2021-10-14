@@ -177,7 +177,7 @@ Resources:
       ResponseParameters:
         gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
       ResponseTemplates:
-        "text/html": "<body><h1 style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>Your request has been blocked</h1><p style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>We&#39;ve detected unusual activity with your attempt to access the service.</p></body>"
+        "text/html": "<body><h2 style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>Your request has been blocked</h2><p style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>We&#39;ve detected unusual activity with your attempt to access the service.</p></body>"
       RestApiId: !Ref ApiGateway
       ResponseType: INTEGRATION_FAILURE
       StatusCode: "504"
@@ -250,7 +250,7 @@ Resources:
                       'Content-Type': 'text/html; charset=utf8'
                   },
                   'isBase64Encoded': False,
-                  'body': "<body><h1 style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>Your request has been blocked</h1><p style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>We&#39;ve detected unusual activity with your attempt to access the service.</p></body>",
+                  'body': "<body><h2 style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>Your request has been blocked</h2><p style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>We&#39;ve detected unusual activity with your attempt to access the service.</p></body>",
               }   
       MemorySize: 512
       Timeout: 15
@@ -501,7 +501,7 @@ Resources:
                   except:
                     return {
                         'statusCode': 403,
-                        'body': "<body><h2 style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>Your request has been blocked</h1><p style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>We&#39;ve detected unusual activity with your attempt to access the service.</p></body>"
+                        'body': "<body><h2 style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>Your request has been blocked</h2><p style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>We&#39;ve detected unusual activity with your attempt to access the service.</p></body>"
                     } 
               else:
                   return {
