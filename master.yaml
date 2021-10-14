@@ -170,13 +170,25 @@ Resources:
           StatusCode: '200'
       ResourceId: !Ref "MfuAPIResource"
       RestApiId: !Ref "ApiGateway"
-  
+
+  ApiGatewayResponse:
+    Type: "AWS::ApiGateway::GatewayResponse"
+    Properties:
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+      ResponseTemplates:
+        "text/html": "<body><h1 style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>Your request has been blocked</h1><p style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>We&#39;ve detected unusual activity with your attempt to access the service.</p></body>"
+      RestApiId: !Ref ApiGateway
+      ResponseType: INTEGRATION_FAILURE
+      StatusCode: "504"
+
   ApiGatewayDeployment:
     Type: "AWS::ApiGateway::Deployment"
     DependsOn:
       - "IfaApiGatewayMethod"
       - "MfuApiGatewayMethod"
       - "RceApiCORSOptionMethod"
+      - "ApiGatewayResponse"
     Properties:
       RestApiId: !Ref "ApiGateway"
       StageName: "dev"
@@ -238,7 +250,7 @@ Resources:
                       'Content-Type': 'text/html; charset=utf8'
                   },
                   'isBase64Encoded': False,
-                  'body': 'Blocking Unusual Activity with Your Attempt to Access AWS Lambda',
+                  'body': "<body><h1 style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>Your request has been blocked</h1><p style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>We&#39;ve detected unusual activity with your attempt to access the service.</p></body>",
               }   
       MemorySize: 512
       Timeout: 15
@@ -381,11 +393,17 @@ Resources:
                     s3_upload = s3.put_object(Bucket=bucket_name, Key=file_name, Body=multipart_content["filename"]) 
                     return {
                         'statusCode': 200,
+                        'headers': {
+                          'Access-Control-Allow-Origin': '*'
+                        },
                         'body': json.dumps('File uploaded successfully!')
                     }
                   except:
                     return {
                         'statusCode': 200,
+                        'headers': {
+                          'Access-Control-Allow-Origin': '*'
+                        },
                         'body': json.dumps('No File has been attached!')
                     }
       MemorySize: 512
@@ -483,7 +501,7 @@ Resources:
                   except:
                     return {
                         'statusCode': 403,
-                        'body': json.dumps('Your Request has been blocked')
+                        'body': "<body><h2 style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>Your request has been blocked</h1><p style='width:100%;margin:0;display:flex; justify-content:center;background-color:white;color:black;'>We&#39;ve detected unusual activity with your attempt to access the service.</p></body>"
                     } 
               else:
                   return {
@@ -593,22 +611,18 @@ Resources:
                                           <div class="card-body">
                                               <h4>2. Upload the Malicious File </h4>
 
-                                              <form id="myFormId" method="post" enctype="multipart/form-data" action="""+mfu_url+""">
+                                              <form id="myFormId" enctype="multipart/form-data">
                                                   <div class="input-group">
                                                       <input type="file" class="form-control" id="myFile" name="filename" aria-describedby="inputGroupFile" aria-label="Upload">
-                                                      <button class="btn btn-outline-danger" type="submit" id="btn_inputGroupFile" onclick="s3api(document.getElementById('myFile').value)">Submit</button>
+                                                      <button class="btn btn-outline-danger" type="button" id="btn_inputGroupFile" onclick="sendFile()">Submit</button>
                                                   </div>
                                               </form>
                                           </div>
                                       </div>
                                   </div>
                               </div>
-                              <div class="row gx-5">
-                                  <div id="resultsDiv2"></div>
-                              </div>
                           </div>
                       </section>
-                      
                       <!-- Footer-->
                       <!-- <footer class="footer py-3 bg-dark fixed-bottom" style="margin-bottom: 0%;">
                           <div class="container px-5">
@@ -617,26 +631,74 @@ Resources:
                       </footer> -->
                       <!-- Bootstrap core JS-->
                       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js"></script>
+                      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+                      <script>
+                          function sendFile() {
+                              var formData = new FormData();
+                              jQuery.each(jQuery('#myFile')[0].files, function(i, file) {
+                                  formData.append('filename', file);
+                              });
+
+                              $.ajax({
+                                  accepts: "*",
+                                  url: """
+                                  
+              mfu2 = """,
+              method: 'POST',
+                                  contentType: false,
+                                  data: formData,
+                                  crossDomain: true,
+                                  processData: false,
+                                  success: function (data) {
+                                      console.log(data);
+                                      $("#response-text").html(data);
+                                      $("#response-modal").modal('show');
+                                  },
+                                  error: function (request, status, error) {
+                                      console.log(request);
+                                      $("#response-text").html(request.responseText);
+                                      $("#response-modal").modal('show');
+                                  }
+                              });
+                          };
                       
+                      </script>
+
                   </body>
+                  <div class="modal" id="response-modal" tabindex="-1" role="dialog" aria-hidden="true">
+                      <div class="modal-dialog modal-md">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                              <h4 class="modal-title" id="myModalLabel"> Response </h4>
+                              <button type="button" class="btn btn-danger btn-simple" data-bs-dismiss="modal">&times;</button>
+                          </div>
+                          <div class="modal-body" id="response-text">
+                            
+                          </div>
+                      </div>
+                      </div>
+                  </div>
               </html>
               """
               rce_body = """<!DOCTYPE html>
               <html lang="en">
-                  <head>
-                      <meta charset="utf-8" />
-                      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-                      <meta name="description" content="" />
-                      <meta name="author" content="" />
-                      <title>Serverless Application - Command Injection</title>
-                      <!-- Favicon-->
-                      <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
-                      <!-- Bootstrap icons-->
-                      <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet" />
-                      <!-- Core theme CSS (includes Bootstrap)-->
-                      <link href="css/styles.css" rel="stylesheet" />
-                  </head>
-                  <body>
+
+              <head>
+                  <meta charset="utf-8" />
+                  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+                  <meta name="description" content="" />
+                  <meta name="author" content="" />
+                  <title>Serverless Application - Command Injection</title>
+                  <!-- Favicon-->
+                  <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+                  <!-- Bootstrap icons-->
+                  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet" />
+                  <!-- Core theme CSS (includes Bootstrap)-->
+                  <link href="css/styles.css" rel="stylesheet" />
+              </head>
+
+              <body>
+                  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
                   <script>
                       // call out to API gateway endpoint setup
                       var sqlapi = (searchName) => {
@@ -659,210 +721,227 @@ Resources:
               rce2 = """, requestOptions)
                           .then(response => response.text())
                           .then(result => {
-                              var response = document.createElement('div');
-                              response.innerHTML = JSON.parse(result).body;
-                              var resultDiv = document.getElementById('resultsDiv2');
-                              resultDiv.appendChild(response);
+                              var response = JSON.parse(result).body;
+                              $("#response-text").html(response);
+                              $("#response-modal").modal('show');
                           })
                           .catch(error => console.log('error', error));
-                          
-                          }
-                    </script>
-                      <!-- Responsive navbar-->
-                      <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-                          <div class="container px-5">
-                              <a class="navbar-brand" href="index.html">Web App</a>
-                              <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-                              <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                                  <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                                      <li class="nav-item"><a class="nav-link" aria-current="page" href="index.html"><i class="bi bi-house"></i> Home</a></li>
-                                      <li class="nav-item"><a class="nav-link" aria-current="page" href="mfu.html"><i class="bi bi-file-earmark-arrow-up"></i> Malicious File Upload</a></li>
-                                      <li class="nav-item"><a class="nav-link active" aria-current="page" href="cmi.html"><i class="bi bi-terminal"></i> Command Injection</a></li>
-                                      <li class="nav-item"><a class="nav-link" aria-current="page" href="ifa.html"><i class="bi bi-folder-x"></i> Illegal File Access</a></li>
-                                  </ul>
+
+                  }
+              </script>
+              <!-- Responsive navbar-->
+              <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+                  <div class="container px-5">
+                      <a class="navbar-brand" href="index.html">Web App</a>
+                      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+                      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                          <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                              <li class="nav-item"><a class="nav-link" aria-current="page" href="index.html"><i class="bi bi-house"></i> Home</a></li>
+                              <li class="nav-item"><a class="nav-link" aria-current="page" href="mfu.html"><i class="bi bi-file-earmark-arrow-up"></i> Malicious File Upload</a></li>
+                              <li class="nav-item"><a class="nav-link active" aria-current="page" href="cmi.html"><i class="bi bi-terminal"></i> Command Injection</a></li>
+                              <li class="nav-item"><a class="nav-link" aria-current="page" href="ifa.html"><i class="bi bi-folder-x"></i> Illegal File Access</a></li>
+                          </ul>
+                      </div>
+                  </div>
+              </nav>
+              <!-- Header-->
+              <header>
+                  <div class="container px-5">
+                      <div class="row gx-5 justify-content-center">
+                          <div class="col-lg-10">
+                              <div class="text-center my-5">
+                                  <div class="feature bg-danger bg-gradient text-white rounded-3 mb-3"><i class="bi bi-terminal"></i></div>
+                                  <h2>Command Injection</h2>
+                                  <p>Command Injection attacks main objective is to be able to execute arbitrary commands on the Operating System(OS)</p>
+                                  <p>For more information please see <a href="https://owasp.org/www-community/attacks/Command_Injection" target="_blank" style="color: cornflowerblue;">Owasp - Command Injection</a></p>
                               </div>
                           </div>
-                      </nav>
-                      <!-- Header-->
-                      <header>
-                          <div class="container px-5">
-                              <div class="row gx-5 justify-content-center">
-                                  <div class="col-lg-10">
-                                      <div class="text-center my-5">
-                                          <div class="feature bg-danger bg-gradient text-white rounded-3 mb-3"><i class="bi bi-terminal"></i></div>
-                                          <h2>Command Injection</h2>
-                                          <p>Command Injection attacks main objective is to be able to execute arbitrary commands on the Operating System(OS)</p>
-                                          <p>For more information please see <a href="https://owasp.org/www-community/attacks/Command_Injection" target="_blank" style="color: cornflowerblue;">Owasp - Command Injection</a></p>
-                                      </div>
+                      </div>
+                  </div>
+              </header>
+              <!-- MFU section-->
+              <section class="py-5" id="mfu">
+                  <div class="container px-5 my-5">
+                      <div class="row gx-5">
+                          <div class="col-lg-12">
+                              <div class="card">
+                                  <div class="card-body">
+                                      <h4>How to execute</h4>
+                                      <p>Provided is a simple search box that allows to retrieve an IP address from a DNS name.
+                                          <br> Example: <b>google.com</b>, the return response would be <b>x.x.x.x</b></p>
+                                      <p>Poor coding practices on this function allow for simple command injections</p>
                                   </div>
                               </div>
                           </div>
-                      </header>
-                      <!-- MFU section-->
-                      <section class="py-5" id="mfu">
-                          <div class="container px-5 my-5">
-                              <div class="row gx-5">
-                                  <div class="col-lg-12">
-                                      <div class="card">
-                                          <div class="card-body">
-                                              <h4>How to execute</h4>
-                                              <p>Provided is a simple search box that allows to retrieve an IP address from a DNS name.
-                                              <br> Example: <b>google.com</b>, the return response would be <b>x.x.x.x</b></p>
-                                              <p>Poor coding practices on this function allow for simple command injections</p>
-                                          </div>
-                                      </div>
+                      </div>
+                      <br>
+                      <div class="row gx-5">
+                          <div class="col-lg-6">
+                              <div class="card">
+                                  <div class="card-body">
+                                      <h4>1. Copy the commands </h4>
+                                      <p>google.com && whoami<br>google.com && env</p>
                                   </div>
-                              </div>
-                              <br>
-                              <div class="row gx-5">
-                                  <div class="col-lg-6">
-                                      <div class="card">
-                                          <div class="card-body">
-                                              <h4>1. Copy the commands </h4>
-                                              <p>google.com && whoami<br>google.com && env</p>
-                                          </div>
-                                      </div>
-                                  </div>
-                                  <div class="col-lg-6">
-                                      <div class="card">
-                                          <div class="card-body">
-                                              <h4>2. Paste in the box </h4>
-                                              <form method="post" onkeydown="return event.key != 'Enter';">
-                                                  <label>Search DNS Name :</label>
-                                                  <div class="input-group">
-                                                      <input type="text" class="form-control" id="searchName" aria-label="Text input with segmented dropdown button">
-                                                      <button type="button" class="btn btn-outline-danger" onclick="sqlapi(document.getElementById('searchName').value)">Submit</button>
-                                                  </div>
-                                              </form>
-                                          </div>
-                                      </div>
-                                  </div>
-                              </div>
-                              <div class="row gx-5">
-                                  <div id="resultsDiv2"></div>
                               </div>
                           </div>
-                      </section>
-                
-                      <!-- Footer-->
-                      <!-- <footer class="footer py-3 bg-dark fixed-bottom" style="margin-bottom: 0%;">
+                          <div class="col-lg-6">
+                              <div class="card">
+                                  <div class="card-body">
+                                      <h4>2. Paste in the box </h4>
+                                      <form method="post" onkeydown="return event.key != 'Enter';">
+                                          <label>Search DNS Name :</label>
+                                          <div class="input-group">
+                                              <input type="text" class="form-control" id="searchName" aria-label="Text input with segmented dropdown button">
+                                              <button type="button" class="btn btn-outline-danger" onclick="sqlapi(document.getElementById('searchName').value)">Submit</button>
+                                          </div>
+                                      </form>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </section>
+
+              <!-- Footer-->
+              <!-- <footer class="footer py-3 bg-dark fixed-bottom" style="margin-bottom: 0%;">
                           <div class="container px-5">
                               <p class="m-0 text-center text-white">Serverless Application 2021</p>
                           </div>
                       </footer> -->
-                      <!-- Bootstrap core JS-->
-                      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js"></script>
-                      
-                  </body>
-              </html>
+              <!-- Bootstrap core JS-->
+              <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js"></script>
+
+          </body>
+          <div class="modal" id="response-modal" tabindex="-1" role="dialog" aria-hidden="true">
+              <div class="modal-dialog modal-md">
+                  <div class="modal-content">
+                      <div class="modal-header">
+                          <h4 class="modal-title" id="myModalLabel"> Response </h4>
+                          <button type="button" class="btn btn-danger btn-simple" data-bs-dismiss="modal">&times;</button>
+                      </div>
+                      <div class="modal-body" id="response-text">
+
+                      </div>
+                  </div>
+              </div>
+          </div>
+
+          </html>
               """
               
               ifa_body = """<!DOCTYPE html>
               <html lang="en">
-                  <head>
-                      <meta charset="utf-8" />
-                      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-                      <meta name="description" content="" />
-                      <meta name="author" content="" />
-                      <title>Serverless Application - Illegal File Access</title>
-                      <!-- Favicon-->
-                      <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
-                      <!-- Bootstrap icons-->
-                      <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet" />
-                      <!-- Core theme CSS (includes Bootstrap)-->
-                      <link href="css/styles.css" rel="stylesheet" />
-                  </head>
-                  <body>
-                      <!-- Responsive navbar-->
-                      <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-                          <div class="container px-5">
-                              <a class="navbar-brand" href="index.html">Web App</a>
-                              <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-                              <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                                  <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                                      <li class="nav-item"><a class="nav-link" aria-current="page" href="index.html"><i class="bi bi-house"></i> Home</a></li>
-                                      <li class="nav-item"><a class="nav-link" aria-current="page" href="mfu.html"><i class="bi bi-file-earmark-arrow-up"></i> Malicious File Upload</a></li>
-                                      <li class="nav-item"><a class="nav-link" aria-current="page" href="cmi.html"><i class="bi bi-terminal"></i> Command Injection</a></li>
-                                      <li class="nav-item"><a class="nav-link active" aria-current="page" href="ifa.html"><i class="bi bi-folder-x"></i> Illegal File Access</a></li>
-                                  </ul>
-                              </div>
+
+              <head>
+                  <meta charset="utf-8" />
+                  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+                  <meta name="description" content="" />
+                  <meta name="author" content="" />
+                  <title>Serverless Application - Illegal File Access</title>
+                  <!-- Favicon-->
+                  <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+                  <!-- Bootstrap icons-->
+                  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet" />
+                  <!-- Core theme CSS (includes Bootstrap)-->
+                  <link href="css/styles.css" rel="stylesheet" />
+              </head>
+
+              <body>
+                  <!-- Responsive navbar-->
+                  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+                      <div class="container px-5">
+                          <a class="navbar-brand" href="index.html">Web App</a>
+                          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+                          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                              <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                                  <li class="nav-item"><a class="nav-link" aria-current="page" href="index.html"><i class="bi bi-house"></i> Home</a></li>
+                                  <li class="nav-item"><a class="nav-link" aria-current="page" href="mfu.html"><i class="bi bi-file-earmark-arrow-up"></i> Malicious File Upload</a></li>
+                                  <li class="nav-item"><a class="nav-link" aria-current="page" href="cmi.html"><i class="bi bi-terminal"></i> Command Injection</a></li>
+                                  <li class="nav-item"><a class="nav-link active" aria-current="page" href="ifa.html"><i class="bi bi-folder-x"></i> Illegal File Access</a></li>
+                              </ul>
                           </div>
-                      </nav>
-                      <!-- Header-->
-                      <header>
-                          <div class="container px-5">
-                              <div class="row gx-5 justify-content-center">
-                                  <div class="col-lg-10">
-                                      <div class="text-center my-5">
-                                          <div class="feature bg-danger bg-gradient text-white rounded-3 mb-3"><i class="bi bi-folder-x"></i></div>
-                                          <h2>Illegal File Access</h2>
-                                          <p>Illegal File access occurs when a lack of restriction enforcement on what users are allowed to do. Exploits can consist of access being granted to 'restricted' functionality or viewing of sensitive information</p>
-                                          <p>For more information please see <a href="https://owasp.org/www-community/Broken_Access_Control" target="_blank" style="color:cornflowerblue;">Owasp - Broken Access Control</a></p>
-                                      </div>
+                      </div>
+                  </nav>
+                  <!-- Header-->
+                  <header>
+                      <div class="container px-5">
+                          <div class="row gx-5 justify-content-center">
+                              <div class="col-lg-10">
+                                  <div class="text-center my-5">
+                                      <div class="feature bg-danger bg-gradient text-white rounded-3 mb-3"><i class="bi bi-folder-x"></i></div>
+                                      <h2>Illegal File Access</h2>
+                                      <p>Illegal File access occurs when a lack of restriction enforcement on what users are allowed to do. Exploits can consist of access being granted to 'restricted' functionality or viewing of sensitive information</p>
+                                      <p>For more information please see <a href="https://owasp.org/www-community/Broken_Access_Control" target="_blank" style="color:cornflowerblue;">Owasp - Broken Access Control</a></p>
                                   </div>
                               </div>
                           </div>
-                      </header>
-                      <!-- MFU section-->
-                      <section class="py-5" id="mfu">
-                          <div class="container px-5 my-5">
-                              <div class="row gx-5">
-                                  <div class="col-lg-12">
-                                      <div class="card">
-                                          <div class="card-body">
-                                              <h4>How to execute</h4>
-                                              <p>Provided is a vulnerable Lambda function.
+                      </div>
+                  </header>
+                  <!-- MFU section-->
+                  <section class="py-5" id="mfu">
+                      <div class="container px-5 my-5">
+                          <div class="row gx-5">
+                              <div class="col-lg-12">
+                                  <div class="card">
+                                      <div class="card-body">
+                                          <h4>How to execute</h4>
+                                          <p>Provided is a vulnerable Lambda function.
                                               <p>Poor cloud architecture design on this function allow for viewing of sensitvie information</p>
-                                          </div>
                                       </div>
                                   </div>
-                              </div>
-                              <br>
-                              <div class="row gx-5">
-                                  <div class="col-lg-12">
-                                      <div class="card">
-                                          <div class="card-body">
-                                              <h4>1. Try executing the following URL's to access sensitive information </h4>
-                                              <p>https://XXXXXXX-api.ap-northeast-1.amazonaws.com/dev/ifa?file=/proc/cpuinfo</p>
-                                              <p>https://XXXXXXX-api.ap-northeast-1.amazonaws.com/dev/ifa?file=/etc/hosts</p>
-                                              <p>https://XXXXXXX-api.ap-northeast-1.amazonaws.com/dev/ifa?file=/proc/self/environ</p>
-                                          </div>
-                                      </div>
-                                  </div>
-                              </div>
-                              <br>
-                              <div class="row gx-5">
-                                  <div class="col-lg-12">
-                                      <div class="card">
-                                          <div class="card-body">
-                                              <h4>2. Go to the Lambda Function </h4>
-                                              <form id="myFormId" method="get" enctype="multipart/form-data" action="""+ifa_url+""">
-                                                  <!-- submit with onclick to send form values to api gateway -->
-                                                  <div class="d-grid gap-2">
-                                                      <button type="submit" class="btn btn-outline-danger">Start Lab</button>
-                                                  </div>
-                                                  <!-- <input type="submit" name="submit" value="Upload"> -->
-                                              </form>
-                                          </div>
-                                      </div>
-                                  </div>
-                              </div>
-                              <div class="row gx-5">
-                                  <div id="resultsDiv2"></div>
                               </div>
                           </div>
-                      </section>
-                      
-                      <!-- Footer-->
-                      <!-- <footer class="footer py-3 bg-dark fixed-bottom" style="margin-bottom:0%;">
-                          <div class="container px-5">
-                              <p class="m-0 text-center text-white">Serverless Application 2021</p>
+                          <br>
+                          <div class="row gx-5">
+                              <div class="col-lg-12">
+                                  <div class="card">
+                                      <div class="card-body">
+                                          <h4>1. Go to the Lambda Function </h4>
+                                          <p>When you click, the application will open in a new tab.</p>
+                                          <form id="myFormId" method="get">
+                                              <!-- submit with onclick to send form values to api gateway -->
+                                              <div class="d-grid gap-2">
+                                                  <a type="button" href="""+ifa_url+""" value="facebook" target="_blank" class="btn btn-outline-danger">Start Lab</a>
+                                              </div>
+                                              <!-- <input type="submit" name="submit" value="Upload"> -->
+                                          </form>
+                                      </div>
+                                  </div>
+
+                              </div>
                           </div>
-                      </footer> -->
-                      <!-- Bootstrap core JS-->
-                      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js"></script>
-                      
-                  </body>
+                          <br>
+                          <div class="row gx-5">
+                              <div class="col-lg-12">
+                                  <div class="card">
+                                      <div class="card-body">
+                                          <h4>2. Try executing the following URL's to access sensitive information </h4>
+                                          <p>Copy the end of the following URLs and paste in the new tab you've opened:</p>
+                                          <p>https://XXXXXXX-api.XXXXXX.amazonaws.com/dev/ifa?file=/proc/cpuinfo</p>
+                                          <p>https://XXXXXXX-api.XXXXXX.amazonaws.com/dev/ifa?file=/etc/hosts</p>
+                                          <p>https://XXXXXXX-api.XXXXXX.amazonaws.com/dev/ifa?file=/proc/self/environ</p>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                          <div class="row gx-5">
+                              <div id="resultsDiv2"></div>
+                          </div>
+                      </div>
+                  </section>
+
+                  <!-- Footer-->
+                  <!-- <footer class="footer py-3 bg-dark fixed-bottom" style="margin-bottom:0%;">
+                              <div class="container px-5">
+                                  <p class="m-0 text-center text-white">Serverless Application 2021</p>
+                              </div>
+                          </footer> -->
+                  <!-- Bootstrap core JS-->
+                  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js"></script>
+                  <script>
+                  </script>
+              </body>
+
               </html>
               """
               s3 = boto3.client('s3')
@@ -872,8 +951,9 @@ Resources:
               responseData['Data'] = responseValue
               
               if responseValue == "Create":
+                mfubody = (mfu_body + f'"{mfu_url}"'+ mfu2)
                 mfu_html = "mfu.html"
-                uploadmfu = s3.put_object(Body=mfu_body, Bucket=bucket_name, Key=mfu_html, ContentType='text/html', ACL='public-read')
+                uploadmfu = s3.put_object(Body=mfubody, Bucket=bucket_name, Key=mfu_html, ContentType='text/html', ACL='public-read')
                 
                 rcebody = (rce_body + f'"{rce_url}"'+ rce2)
                 rce_html = "cmi.html"
