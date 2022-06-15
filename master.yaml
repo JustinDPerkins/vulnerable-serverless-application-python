@@ -1,18 +1,41 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: A Serverless Application to demo Cloud One Application Security.
+
 Parameters:
   C1RegionEndpoint:
     Type: String
-    Default: ""
+    Default: "https://agents.us-1.application.cloudone.trendmicro.com/"
     Description: Enter the Cloud One Account Region Endpoint.
   AppSecKey:
     Type: String
     Default: ""
-    Description: Enter the Security Group Key.
+    Description: Enter the Security Group Key. You can find it at https://cloudone.trendmicro.com/application#/policies
   AppSecSecret:
     Type: String
     Default: ""
-    Description: Enter the Security Group Secret.
+    Description: Enter the Security Group Secret. You can find it at https://cloudone.trendmicro.com/application#/policies
+
+Metadata: 
+  AWS::CloudFormation::Interface: 
+    ParameterGroups: 
+      - 
+        Label: 
+          default: "Security Group Data"
+        Parameters: 
+          - AppSecKey
+          - AppSecSecret
+      - 
+        Label: 
+          default: "Cloud One Regional Setting"
+        Parameters: 
+          - C1RegionEndpoint
+    ParameterLabels:
+      C1RegionEndpoint:
+        default: Cloud One Account Region Endpoint. Defaults to https://agents.us-1.application.cloudone.trendmicro.com/
+      AppSecKey:
+        default: Security Group Key
+      AppSecSecret:
+        default: Security Group Secret
 
 Resources:
 
